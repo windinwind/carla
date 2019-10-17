@@ -71,15 +71,12 @@ namespace nav {
                     break;
             
                 case WALKER_IN_EVENT:
-                    // logging::log("Walker in event ", it.first);
                     if (ExecuteEvent(it.second, delta)) {
-                        // logging::log("Walker event end ", it.first);
                         SetWalkerNextPoint(it.first);
                     }
                     break;
                 
                 case WALKER_STOP:
-                    // logging::log("Walker stop ", it.first);
                     info.state = WALKER_IDLE;
                     break;
             }
@@ -108,11 +105,10 @@ namespace nav {
         _nav->GetWalkerPosition(id, info.from);
         info.to = to;
         info.currentIndex = 0;
-        info.state = WALKER_IDLE0;
+        info.state = WALKER_IDLE;
 
         // get a route from navigation
         _nav->GetAgentRoute(id, info.from, to, path, area);
-        // logging::log("Got route of points: ", path.size());
 
         // create each point of the route
         info.route.clear();
@@ -122,19 +118,16 @@ namespace nav {
             switch (area[i]) {
                 // random waiting
                 case SAMPLE_POLYAREA_GROUND: 
-                    // logging::log("Area ground ", i);
                     info.route.emplace_back(WalkerEventIgnore(), std::move(path[i]));
                     break;
                 
                 // stop and check
                 case SAMPLE_POLYAREA_ROAD:
                 case SAMPLE_POLYAREA_CROSS: 
-                    // logging::log("Area road/cross ", i);
                     info.route.emplace_back(WalkerEventStopAndCheck(4), std::move(path[i]));
                     break;
                 
                 default:
-                    // logging::log("Area other ", id);
                     info.route.emplace_back(WalkerEventIgnore(), std::move(path[i]));
             }
         }
@@ -166,7 +159,6 @@ namespace nav {
             // change the state
             info.state = WALKER_WALKING;
             // assign the point to go
-            // logging::log("Walker next point in route ", info.currentIndex);
             _nav->PauseAgent(id, false);
             _nav->SetWalkerDirectTarget(id, info.route[info.currentIndex].location);
         } else {
@@ -176,7 +168,6 @@ namespace nav {
             // we need a new route from here
             carla::geom::Location location;
             _nav->GetRandomLocation(location, 1, nullptr);
-            // logging::log("Walker new route ", id);
             SetWalkerRoute(id, location);
         }
         
