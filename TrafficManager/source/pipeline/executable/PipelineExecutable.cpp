@@ -50,30 +50,45 @@ void handler() {
 int main(int argc, char *argv[]) {
   std::set_terminate(handler);
 
-  cc::Client client_conn = cc::Client("localhost", 2000);
-  cc::World world = client_conn.GetWorld();
-
   if (argc == 2 && std::string(argv[1]) == "-h") {
     std::cout << "\nAvailable options\n";
     std::cout << "[-n] \t\t Number of vehicles to be spawned\n";
     std::cout << "[-s] \t\t System randomization seed integer\n";
   } else {
-
-    uint target_traffic_amount = 0u;
-    if (argc >= 3 && std::string(argv[1]) == "-n") {
-      try {
-        target_traffic_amount = std::stoi(argv[2]);
-      } catch (const std::exception &e) {
-        carla::log_warning("Failed to parse argument, choosing defaults\n");
-      }
-    }
-
     int randomization_seed = -1;
-    if (argc == 5 && std::string(argv[3]) == "-s") {
-      try {
-        randomization_seed = std::stoi(argv[4]);
-      } catch (const std::exception &e) {
-        carla::log_warning("Failed to parse argument, choosing defaults\n");
+    uint target_traffic_amount = 0u;
+    std::string host = "localhost";
+    uint port = 2000;
+
+    for (int i = 1; i < argc; i++) {
+      std::string this_arg = std::string(argv[i]);
+
+      if (this_arg == "-n") {
+        try {
+          target_traffic_amount = std::stoi(argv[++i]);
+        } catch (const std::exception &e) {
+          carla::log_warning("Failed to parse argument, choosing defaults\n");
+        }
+      }
+
+      if (this_arg == "-s") {
+        try {
+          randomization_seed = std::stoi(argv[++i]);
+        } catch (const std::exception &e) {
+          carla::log_warning("Failed to parse argument, choosing defaults\n");
+        }
+      }
+
+      if (this_arg == "-p") {
+        try {
+          port = (uint)std::stoi(argv[++i]);
+        } catch (const std::exception &e) {
+          carla::log_warning("Failed to parse argument, choosing defaults\n");
+        }
+      }
+
+      if (this_arg == "--host") {
+        host = std::string(argv[++i]);
       }
     }
 
@@ -83,8 +98,10 @@ int main(int argc, char *argv[]) {
       std::srand(randomization_seed);
     }
 
-    run_pipeline(world, client_conn, target_traffic_amount, randomization_seed);
+    cc::Client client_conn = cc::Client(host, port);
+    cc::World world = client_conn.GetWorld();
 
+    run_pipeline(world, client_conn, target_traffic_amount, randomization_seed);
   }
 
   return 0;
@@ -126,7 +143,8 @@ void run_pipeline(cc::World &world, cc::Client &client_conn,
       client_conn,
       world,
       debug_helper,
-      1
+      //1  // Should be # cores
+      traffic_manager::read_core_count()
       );
 
   try
